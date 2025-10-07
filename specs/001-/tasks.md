@@ -76,6 +76,47 @@
   - 配置: STUN/TURN 端口, 認證方式, 中繼範圍
   - ICE 策略: 配置 relay-only 模式支援 (用於 P2P 失敗降級)
   - 對應: spec.md 混合模式「優先 P2P 直連,無法直連時使用中繼」
+  - **參考文件**: [coturn configuration example](https://www.voip-info.org/forum/threads/turnserver-conf-for-webrtc.23486/)
+  - **配置範例**:
+    ```conf
+    # /etc/turnserver.conf
+
+    # 監聽的 IP 位址
+    listening-ip=0.0.0.0
+
+    # TURN 伺服器的公開 IP 位址
+    external-ip=<YOUR_PUBLIC_IP>
+
+    # STUN/TURN 監聽端口
+    listening-port=3478
+    tls-listening-port=5349
+
+    # 中繼端口範圍
+    min-port=49152
+    max-port=65535
+
+    # 認證領域
+    realm=yourdomain.com
+
+    # 使用長期憑證機制
+    lt-cred-mech
+
+    # 使用靜態認證密鑰
+    use-auth-secret
+    static-auth-secret="YourSecretPassword"
+
+    # Log 檔案路徑
+    log-file=/var/log/turnserver.log
+
+    # 啟用詳細日誌
+    verbose
+
+    # 安全設定
+    fingerprint
+    no-multicast-peers
+    no-loopback-peers
+    no-cli
+    ```
 
 ---
 
@@ -282,6 +323,7 @@
   - 實作: `startPeriodicReporting()` (每 5 分鐘)
   - 使用: Timer.periodic
   - 儲存至 StorageService
+  - 暫存上限 100 筆,超過 7 天丟棄
   - 網路失敗處理: 暫存失敗記錄,下次連線成功時批次重送
   - 對應: FR-005, spec.md Edge Case 網路中斷重試
   - 依賴: T040, T028, T054
@@ -332,6 +374,12 @@
 - [ ] **T050** [CORE] StorageService: 裝置資料操作
   - 路徑: lib/services/storage_service_impl.dart
   - 實作: `saveDevice(device)`, `getDevice(deviceId)`, `getAllDevices()`
+  - 依賴: T025, T028
+
+- [ ] **T050a** [CORE] StorageService: 舊身份檢測
+  - 路徑: lib/services/storage_service_impl.dart
+  - 實作: detectOldIdentity() (檢查 Isar 是否有舊 Device 記錄)
+  - 對應: FR-015
   - 依賴: T025, T028
 
 - [ ] **T051** [CORE] StorageService: 電量歷史操作
@@ -542,6 +590,11 @@
   - 對應: spec.md Edge Case「超過 10 分鐘未更新標示為離線」
   - 依賴: T050, T054
 
+- [ ] **T081b** [CORE] StorageService: 歷史資料壓縮策略
+  - 路徑: lib/services/storage_service_impl.dart
+  - 實作: 每月壓縮 30 天前的記錄 (1 小時間隔 → 1 天間隔)
+  - 對應: FR-013 + FR-014 (無上限裝置 × 永久記錄)
+
 ### 效能最佳化
 
 - [ ] **T081** [P] 效能: Isar 批次寫入
@@ -643,7 +696,7 @@
   - 依賴: T058
 
 - [ ] **T097a** [P][TEST] 效能測試: 背景功耗
-  - 驗證: 背景運行時低功耗 <5% 電量消耗/日 (plan.md Performance Goals L74)
+  - 驗證: 待機模式,螢幕關閉,僅背景回報電量時,背景運行時低功耗 <5% 電量消耗/日 (plan.md Performance Goals L74)
   - 測試方法: 充滿電後背景運行 24 小時,測量電量消耗
   - 平台: Android, iPadOS (Windows/macOS 一般為插電使用)
   - 依賴: T079, T080
@@ -878,7 +931,7 @@ Task: "Rust: Ed25519 簽章與驗證 (T036)"
 **任務清單產生時間**: 2025-10-07
 **任務清單更新時間**: 2025-10-07 (/analyze 修正後)
 **下一步**: 執行 Phase 3.1 設置任務 (T001-T009)
-**快速開始**: 執行 `flutter create --org com.localassistant --platforms windows,macos,android .`
+**快速開始**: 執行 `flutter create --org com.localassistant --platforms windows,macos,android,ios .`
 **修正歷史**:
 - 修正 FR 編號 (FR-012 統一憲章原則, FR-013-015 重新編號)
 - 新增 T078a (身份恢復 UI), T080a (離線偵測), T097a (背景功耗測試)

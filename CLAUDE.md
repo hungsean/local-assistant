@@ -86,6 +86,20 @@ turnserver -c turnserver.conf     # 啟動 coturn
 - ✅ 資料傳輸必須端到端加密 (Noise Protocol)
 - ✅ Isar 資料庫使用 AES-256 加密,金鑰存於平台金鑰鏈
 
+## 術語表 (Glossary)
+
+| 術語 (Term) | 英文 (English) | 說明 (Description) |
+| --- | --- | --- |
+| 裝置 | Device | 代表一個實體裝置，擁有唯一的身份和金鑰。 |
+| 電量狀態 | Battery Status | 裝置的即時電量資訊，包含百分比和充電狀態。 |
+| 連線資訊 | Connection Info | 儲存裝置間連線狀態的資訊，包含 P2P、中繼等。 |
+| 點對點 | P2P (Peer-to-Peer) | 裝置間直接通訊，不透過中央伺服器轉發。 |
+| 中繼 | Relay | 當 P2P 連線失敗時，透過 TURN 伺服器轉發加密資料。 |
+| 信令伺服器 | Signaling Server | 協助裝置交換連線資訊 (IP位址、公鑰) 以建立 P2P 連線的伺服器。 |
+| TURN 伺服器 | TURN Server | 提供中繼 (Relay) 功能的伺服器，通常使用 coturn 實作。 |
+| Noise 協定 | Noise Protocol | 用於建立端到端加密通道的密碼學協定框架。 |
+| 外部函式介面 | FFI (Foreign Function Interface) | 允許一個程式語言呼叫另一個語言的函式，此專案用於 Dart 呼叫 Rust。 |
+
 ## Recent Changes
 - 001-: Added
 
