@@ -201,6 +201,18 @@
   - 對應: quickstart.md 場景 10
   - 驗證: Windows/macOS/Android/iPadOS 正確運作
 
+- [ ] **T024a** [P][TEST] FR-016: 手動 IP 輸入繞過信令伺服器測試
+  - 路徑: integration_test/direct_ip_connection_test.dart
+  - 對應: FR-016 (Direct IP Connection)
+  - 測試場景:
+    1. 模擬信令伺服器無法連線的情況
+    2. 使用者手動輸入目標裝置的 IP 位址與公鑰
+    3. 驗證系統成功建立 P2P 連線 (繞過信令伺服器)
+    4. 驗證 Noise Protocol 握手完成
+    5. 驗證電量資料可正常加密傳輸
+  - 驗證: 在無信令伺服器的情況下,手動 IP 連線功能正常運作
+  - 依賴: T054a
+
 ---
 
 ## Phase 3.3: 資料層實作 (Data Layer)
@@ -406,6 +418,17 @@
   - 實作: `register()`, `listDevices()`, `heartbeat()`
   - 依賴: tungstenite or web_socket_channel
 
+- [ ] **T054a** [CORE] ConnectionService: 手動 IP 輸入功能 (繞過信令伺服器)
+  - 路徑: lib/services/connection_service_impl.dart
+  - 實作: `connectToDeviceDirectly(ipAddress, publicKey)` 方法
+  - 功能: 當信令伺服器無法連線時,允許使用者手動輸入目標裝置 IP 位址直接建立 P2P 連線
+  - 實作細節:
+    - 跳過信令伺服器的 SDP/ICE 交換流程
+    - 使用提供的 IP 位址與公鑰直接建立 WebRTC 連線
+    - 執行 Noise Protocol 握手驗證裝置身份
+  - 對應: FR-016 (Direct IP Connection)
+  - 依賴: T054 (需要處理信令伺服器失敗情境)
+
 - [ ] **T055** [CORE] ConnectionService: WebRTC P2P 連線
   - 路徑: lib/services/connection_service_impl.dart
   - 實作: `connectToDevice(deviceId)` (發送 offer)
@@ -510,6 +533,14 @@
   - 功能: 掃描 QR Code 或手動輸入公鑰
   - 連線至新裝置 (T055)
   - 依賴: T069
+
+- [ ] **T070a** [UI] 主頁面: 手動輸入 IP 位址連線按鈕
+  - 路徑: lib/ui/pages/device_list_page.dart
+  - 功能: 當信令伺服器無法連線時,顯示「手動輸入 IP」按鈕
+  - 實作: 彈出對話框,要求使用者輸入 IP 位址與公鑰
+  - 呼叫: ConnectionService.connectToDeviceDirectly() (T054a)
+  - 對應: FR-016 (Direct IP Connection)
+  - 依賴: T069, T054a
 
 - [ ] **T071** [P][UI] 主頁面: 裝置數量提醒
   - 路徑: lib/ui/widgets/device_count_warning.dart
@@ -890,6 +921,7 @@ Task: "Rust: Ed25519 簽章與驗證 (T036)"
 - [ ] **場景 8**: 歷史記錄查詢效能 <100ms (T022, T044, T096)
 - [ ] **場景 9**: 私鑰不洩露,資料加密傳輸 (T023, T098, T099)
 - [ ] **場景 10**: 四個平台正常運作,身份恢復功能 (T024, T078a, T101-T104)
+- [ ] **FR-016**: 手動 IP 輸入繞過信令伺服器功能正常運作 (T024a, T054a, T070a)
 - [ ] **效能**: 電量顯示 <200ms, P2P 連線 <2s, 中繼延遲 <500ms, 背景功耗 <5%/日 (T094-T097a)
 - [ ] **安全**: 簽章驗證,防重放攻擊,TURN 憑證時效 (T098-T100)
 - [ ] **背景**: 定期回報、自動重連、離線偵測正常運作 (T079, T080, T080a)
