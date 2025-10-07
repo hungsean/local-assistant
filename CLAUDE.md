@@ -90,4 +90,5 @@ turnserver -c turnserver.conf     # 啟動 coturn
 - 001-: Added
 
 <!-- MANUAL ADDITIONS START -->
+目前是我單人開發，請按照只有我開發的狀況下思考
 <!-- MANUAL ADDITIONS END -->

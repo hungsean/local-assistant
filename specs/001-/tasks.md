@@ -36,6 +36,7 @@
 - [ ] **T001** [P] 建立 Flutter 專案結構 (lib/, test/, integration_test/)
   - 路徑: 專案根目錄
   - 執行: `flutter create --org com.localassistant --platforms windows,macos,android,ios .`
+  - 注意: iOS 平台僅用於 iPadOS 支援 (spec.md FR-003),後續需在 ios/Runner.xcodeproj 中配置僅支援 iPad 設備
 
 - [ ] **T002** [P] 配置 Flutter 依賴 (pubspec.yaml)
   - 新增: battery_plus, flutter_webrtc, flutter_secure_storage, isar, isar_flutter_libs
@@ -73,6 +74,8 @@
 - [ ] **T009** 建立 coturn 配置檔 (turnserver.conf)
   - 路徑: turnserver.conf
   - 配置: STUN/TURN 端口, 認證方式, 中繼範圍
+  - ICE 策略: 配置 relay-only 模式支援 (用於 P2P 失敗降級)
+  - 對應: spec.md 混合模式「優先 P2P 直連,無法直連時使用中繼」
 
 ---
 
@@ -167,12 +170,14 @@
   - 路徑: lib/models/device.dart
   - 實作 data-model.md 定義的 Device 實體
   - 包含: deviceId, deviceName, deviceType, platform, publicKey, lastSeen, isLocal
+  - 對應: FR-007
 
 - [ ] **T026** [P][CORE] 建立 BatteryHistory Isar Collection
   - 路徑: lib/models/battery_history.dart
   - 實作 data-model.md 定義的 BatteryHistory 實體
   - 包含: deviceId, batteryLevel, chargingState, timestamp, source
   - 索引: (deviceId, timestamp) 複合索引
+  - 對應: FR-013 (歷史記錄儲存)
 
 - [ ] **T027** [P][CORE] 建立 ConnectionInfo Isar Collection
   - 路徑: lib/models/connection_info.dart
@@ -262,7 +267,9 @@
 - [ ] **T040** [CORE] BatteryService: 本地電量讀取
   - 路徑: lib/services/battery_service_impl.dart
   - 實作: `getCurrentBatteryStatus()` (使用 battery_plus)
-  - 處理: AC 電源裝置 (batteryLevel = -1)
+  - 處理: AC 電源裝置 (batteryLevel = -1), 讀取失敗 (batteryLevel = -2)
+  - 異常處理: try-catch PlatformException,區分三種狀態 (0-100/AC電源/無法取得)
+  - 對應: FR-009, data-model.md L145-149
   - 依賴: battery_plus package
 
 - [ ] **T041** [CORE] BatteryService: 電量變化監聽
@@ -275,7 +282,9 @@
   - 實作: `startPeriodicReporting()` (每 5 分鐘)
   - 使用: Timer.periodic
   - 儲存至 StorageService
-  - 依賴: T040, T028
+  - 網路失敗處理: 暫存失敗記錄,下次連線成功時批次重送
+  - 對應: FR-005, spec.md Edge Case 網路中斷重試
+  - 依賴: T040, T028, T054
 
 - [ ] **T043** [CORE] BatteryService: 電源類型偵測
   - 路徑: lib/services/battery_service_impl.dart
@@ -444,7 +453,8 @@
 - [ ] **T069** [P][UI] 主頁面: 裝置列表 UI
   - 路徑: lib/ui/pages/device_list_page.dart
   - 顯示: 本地裝置 + 遠端裝置列表
-  - 顯示: 電量百分比、充電狀態、線上狀態
+  - 顯示: 電量百分比、充電狀態、線上狀態、最後更新時間 (Device.lastSeen)
+  - 對應: FR-006, FR-007, FR-008
   - 依賴: T040, T050
 
 - [ ] **T070** [UI] 主頁面: 新增裝置按鈕
@@ -462,7 +472,8 @@
 
 - [ ] **T072** [P][UI] 電量詳情頁: 即時電量顯示
   - 路徑: lib/ui/pages/battery_detail_page.dart
-  - 顯示: 電量百分比、充電狀態、電源類型
+  - 顯示: 電量百分比、充電狀態、電源類型、最後更新時間 (BatteryHistory.timestamp)
+  - 對應: FR-008
   - 依賴: T040
 
 - [ ] **T073** [UI] 電量詳情頁: 歷史記錄圖表
@@ -500,6 +511,13 @@
   - 實作: 淺色/深色主題
   - 依賴: T077
 
+- [ ] **T078a** [P][UI] 設定頁面: 身份恢復功能
+  - 路徑: lib/ui/pages/settings_page.dart
+  - 功能: 檢測舊身份 (根據 Device.createdAt),提供「恢復舊身份」或「建立新身份」選項
+  - 實作: 首次啟動時檢查 Isar 是否有舊 Device 記錄,顯示恢復對話框
+  - 對應: FR-015, spec.md 驗收場景 10
+  - 依賴: T045, T049, T050
+
 ---
 
 ## Phase 3.8: 整合與打磨 (Integration & Polish)
@@ -516,6 +534,13 @@
   - 路徑: lib/background/reconnection_worker.dart
   - 定期檢查 ConnectionInfo.nextRetryAt,執行重連
   - 依賴: T060
+
+- [ ] **T080a** [CORE] 裝置離線偵測邏輯
+  - 路徑: lib/services/connection_service_impl.dart
+  - 功能: 定期檢查遠端裝置 lastSeen,超過 10 分鐘(2 個回報週期)未更新標示為「離線」
+  - 實作: Timer.periodic 每分鐘檢查一次,更新 Device.lastSeen 狀態
+  - 對應: spec.md Edge Case「超過 10 分鐘未更新標示為離線」
+  - 依賴: T050, T054
 
 ### 效能最佳化
 
@@ -616,6 +641,12 @@
 - [ ] **T097** [P][TEST] 效能測試: TURN 中繼延遲
   - 驗證: <500ms (Performance Goals)
   - 依賴: T058
+
+- [ ] **T097a** [P][TEST] 效能測試: 背景功耗
+  - 驗證: 背景運行時低功耗 <5% 電量消耗/日 (plan.md Performance Goals L74)
+  - 測試方法: 充滿電後背景運行 24 小時,測量電量消耗
+  - 平台: Android, iPadOS (Windows/macOS 一般為插電使用)
+  - 依賴: T079, T080
 
 ### 安全測試
 
@@ -805,11 +836,11 @@ Task: "Rust: Ed25519 簽章與驗證 (T036)"
 - [ ] **場景 7**: 支援 10+ 台裝置,顯示提醒訊息 (T021, T071)
 - [ ] **場景 8**: 歷史記錄查詢效能 <100ms (T022, T044, T096)
 - [ ] **場景 9**: 私鑰不洩露,資料加密傳輸 (T023, T098, T099)
-- [ ] **場景 10**: 四個平台正常運作 (T024, T101-T104)
-- [ ] **效能**: 電量顯示 <200ms, P2P 連線 <2s, 中繼延遲 <500ms (T094-T097)
+- [ ] **場景 10**: 四個平台正常運作,身份恢復功能 (T024, T078a, T101-T104)
+- [ ] **效能**: 電量顯示 <200ms, P2P 連線 <2s, 中繼延遲 <500ms, 背景功耗 <5%/日 (T094-T097a)
 - [ ] **安全**: 簽章驗證,防重放攻擊,TURN 憑證時效 (T098-T100)
-- [ ] **背景**: 定期回報與自動重連正常運作 (T079, T080)
-- [ ] **憲章**: 所有安全要求符合 constitution.md (T029, T045-T049, T098-T100)
+- [ ] **背景**: 定期回報、自動重連、離線偵測正常運作 (T079, T080, T080a)
+- [ ] **憲章**: 所有安全要求符合 constitution.md FR-012 (T029, T045-T049, T098-T100)
 
 ---
 
@@ -826,7 +857,8 @@ Task: "Rust: Ed25519 簽章與驗證 (T036)"
 - **Phase 3.9 測試驗證**: 4 天 (T087-T104)
 - **Phase 3.10 文件與發布**: 2 天 (T105-T112)
 
-**總計**: 約 34 天 (可透過並行執行縮短至 20-25 天)
+**總計**: 約 35 天 (可透過並行執行縮短至 21-26 天)
+**新增任務**: T078a (身份恢復), T080a (離線偵測), T097a (背景功耗測試)
 
 ---
 
@@ -844,5 +876,11 @@ Task: "Rust: Ed25519 簽章與驗證 (T036)"
 ---
 
 **任務清單產生時間**: 2025-10-07
+**任務清單更新時間**: 2025-10-07 (/analyze 修正後)
 **下一步**: 執行 Phase 3.1 設置任務 (T001-T009)
-**快速開始**: 執行 `flutter create --org com.localassistant --platforms windows,macos,android,ios .`
+**快速開始**: 執行 `flutter create --org com.localassistant --platforms windows,macos,android .`
+**修正歷史**:
+- 修正 FR 編號 (FR-012 統一憲章原則, FR-013-015 重新編號)
+- 新增 T078a (身份恢復 UI), T080a (離線偵測), T097a (背景功耗測試)
+- 補充 T040 (batteryLevel=-2 處理), T042 (網路失敗重試), T069/T072 (顯示更新時間)
+- T001 移除 iOS 平台支援
