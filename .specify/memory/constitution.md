@@ -1,50 +1,144 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report:
+- Version: 0.0.0 → 1.0.0 (initial constitution)
+- New principles added:
+  * I. 裝置為本的身份驗證
+  * II. P2P 加密優先
+  * III. 隱私保護設計
+  * IV. 零知識架構
+  * V. 最小權限原則
+- Templates requiring updates:
+  ✅ plan-template.md (updated)
+  ✅ spec-template.md (updated)
+  ✅ tasks-template.md (updated)
+- Follow-up TODOs: None
+-->
 
-## Core Principles
+# Local Assistant 憲章
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+## 核心原則
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### I. 裝置為本的身份驗證
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+系統 **必須** 以裝置作為驗證的基本單位,不得依賴集中式身份服務。
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+- 每個裝置擁有獨立的加密金鑰對
+- 裝置身份在本地生成,不經由第三方伺服器
+- 裝置間的信任關係透過密鑰交換建立
+- 禁止使用中心化的使用者帳號系統
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+**理由**: 避免單點故障與隱私洩露,讓使用者完全掌控自己的身份。
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+### II. P2P 加密優先
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+所有裝置間通訊 **必須** 採用點對點加密,不得明文傳輸或依賴中繼伺服器加密。
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+- 使用端到端加密協定(如 Noise Protocol Framework、WireGuard 協定)
+- 加密金鑰僅存在於通訊雙方裝置上
+- 中繼節點(若需要)僅轉發加密封包,無法解密內容
+- 每次連線使用不同的會話金鑰
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+**理由**: 確保通訊內容僅有通訊雙方可讀取,即使網路傳輸被攔截也無法解密。
 
-## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
+### III. 隱私保護設計
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+系統架構 **必須** 遵循隱私優先原則,最小化個人資料收集與處理。
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+- 資料在本地裝置處理,避免上傳至雲端
+- 不收集裝置指紋、地理位置等可追蹤資訊
+- 實作資料最小化:僅儲存功能必需的資料
+- 提供資料自主刪除功能
+
+**理由**: 尊重使用者隱私權,降低資料外洩風險。
+
+### IV. 零知識架構
+
+任何協作或同步功能 **必須** 採用零知識架構,伺服器端無法存取使用者資料內容。
+
+- 資料在上傳前於本地加密
+- 伺服器僅儲存加密後的資料塊
+- 加密金鑰僅存在於使用者裝置
+- 實作客戶端加密(Client-side Encryption)
+
+**理由**: 即使伺服器被入侵,攻擊者也無法讀取使用者資料。
+
+### V. 最小權限原則
+
+所有系統元件 **必須** 僅擁有執行其功能所需的最小權限。
+
+- 模組化設計,功能解耦
+- 元件間採用最小權限介面通訊
+- 敏感操作需明確授權
+- 實作權限沙盒(Sandboxing)
+
+**理由**: 降低單一元件被攻擊後的影響範圍。
+
+## 安全要求
+
+### 加密標準
+
+- 對稱加密:**必須** 使用 AES-256-GCM 或 ChaCha20-Poly1305
+- 非對稱加密:**必須** 使用 Ed25519(簽章)與 X25519(金鑰交換)
+- 雜湊函數:**必須** 使用 BLAKE3 或 SHA3-256
+- 禁止使用已知有弱點的演算法(MD5、SHA1、RSA < 2048)
+
+### 金鑰管理
+
+- 私鑰 **必須** 儲存在作業系統金鑰鏈或硬體安全模組(HSM)
+- 實作金鑰輪替機制
+- 提供金鑰備份與復原功能(使用助記詞或紙本備份)
+- 禁止將私鑰寫入日誌或錯誤訊息
+
+### 網路安全
+
+- 實作防重放攻擊(Replay Attack)機制
+- 使用時間戳記與 nonce 防止封包重送
+- 實作連線速率限制(Rate Limiting)
+- 定期更新依賴套件,修補已知漏洞
+
+## 開發規範
+
+### 測試要求(非強制)
+
+- 安全相關功能 **應該** 進行單元測試
+- 加密模組 **應該** 進行向量測試(Test Vectors)
+- P2P 通訊 **應該** 進行整合測試
+- 進行滲透測試與漏洞掃描
+
+### 程式碼審查
+
+- 安全相關變更 **必須** 經過審查
+- 使用靜態分析工具檢查常見漏洞
+- 記錄安全設計決策與權衡
+
+### 文件要求
+
+- **必須** 記錄加密協定與金鑰管理流程
+- **必須** 提供安全最佳實踐指南
+- **必須** 說明威脅模型與信任邊界
+- 提供事件應變計畫
+
+## 治理
+
+### 修訂程序
+
+憲章修訂 **必須** 遵循以下流程:
+1. 提出修訂建議與理由
+2. 評估對現有系統的影響
+3. 記錄修訂版本與日期
+4. 更新相關設計文件與範本
+
+### 版本規則
+
+- **MAJOR** 版本:移除或重新定義核心原則、不向下相容的安全政策變更
+- **MINOR** 版本:新增原則、擴充安全要求
+- **PATCH** 版本:文字修正、澄清說明、非語意變更
+
+### 合規性
+
+- 所有設計 **必須** 通過憲章檢查
+- Pull Request **必須** 驗證是否符合安全原則
+- 複雜度與效能考量 **不得** 犧牲核心安全原則
+- 如需偏離原則,**必須** 提供詳細理由與風險評估
+
+**Version**: 1.0.0 | **Ratified**: 2025-10-07 | **Last Amended**: 2025-10-07

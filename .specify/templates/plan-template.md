@@ -45,9 +45,29 @@
 **Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
 
 ## Constitution Check
+
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-[Gates determined based on constitution file]
+### 核心原則驗證
+
+- [ ] **裝置為本的身份驗證**: 設計是否以裝置為驗證單位?是否避免集中式身份服務?
+- [ ] **P2P 加密優先**: 所有通訊是否採用端到端加密?是否使用安全的加密協定?
+- [ ] **隱私保護設計**: 是否最小化資料收集?資料是否在本地處理?
+- [ ] **零知識架構**: 伺服器端是否無法存取使用者資料內容?
+- [ ] **最小權限原則**: 元件是否僅擁有必要權限?
+
+### 安全要求驗證
+
+- [ ] 使用符合標準的加密演算法(AES-256-GCM/ChaCha20-Poly1305、Ed25519、X25519)
+- [ ] 私鑰安全儲存(金鑰鏈或 HSM)
+- [ ] 實作防重放攻擊與速率限制
+- [ ] 加密協定與金鑰管理已文件化
+
+### 開發規範驗證
+
+- [ ] 安全相關變更已規劃審查流程
+- [ ] 測試計畫涵蓋安全功能
+- [ ] 威脅模型已識別
 
 ## Project Structure
 
